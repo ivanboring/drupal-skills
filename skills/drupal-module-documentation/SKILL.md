@@ -47,12 +47,23 @@ all prose in the docs (this matches the `drupal-project-description` skill).
 
 5. **Write the docs structure** (see Documentation Structure).
 
-6. **Screenshots (optional).** Ask the user first: to capture screenshots, they should install the
+6. **Point the README at the docs.** Append a short section to the **end** of the module's
+   `README.md` telling readers the full documentation lives under `docs/` and is published on
+   GitLab Pages. Keep the rest of the README intact.
+   ```markdown
+
+   ## Documentation
+
+   Full documentation is under [`docs/`](docs/) and published at
+   https://project.pages.drupalcode.org/<data_name>.
+   ```
+
+7. **Screenshots (optional).** Ask the user first: to capture screenshots, they should install the
    `vercel/agent-browser` skill and tell you where their Drupal site is reachable (the base URL and
    any login). If they already have Puppeteer or another browser tool, use that instead. Skip
    screenshots silently if none is available; do not fabricate image paths.
 
-7. **After the first push**, tell the user to open
+8. **After the first push**, tell the user to open
    `https://git.drupalcode.org/project/<data_name>/pages` and turn off the unique ID (the "User
    unique domain" toggle under Deploy > Pages > Domains & settings). With it off the URL is the
    clean `https://project.pages.drupalcode.org/<data_name>`, which is what `site_url` should match.
