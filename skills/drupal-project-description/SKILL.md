@@ -90,6 +90,13 @@ Copy these patterns exactly. The classes are what trigger the styling.
 </div>
 ```
 
+### Warning box: yellow background with an exclamation mark, for important warnings
+```html
+<div class="warning">
+<p>Important note the reader should not miss (breaking change, required config, security caveat).</p>
+</div>
+```
+
 ### Action button: green call-to-action button (an `<a>`, usually wrapped in a `<p>`)
 ```html
 <p><a href="https://example.com" class="action-button" rel="nofollow">Get the Module</a></p>
