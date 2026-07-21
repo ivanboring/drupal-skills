@@ -1,0 +1,36 @@
+# Template mkdocs.yml for a Drupal contrib module.
+# Replace <data_name> with the module machine name and set site_name to the human name.
+# Docs live under docs/, entry point docs/index.md.
+site_name: My Module
+site_url: https://project.pages.drupalcode.org/<data_name>
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+plugins:
+  - search
+
+# Build nav from the docs/ structure. Drop entries that don't apply.
+# Add the Developers section only if the module has an API or plugin system.
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Usage:
+      - Overview: usage/index.md
+  - For Developers:
+      - Overview: developers/index.md
+  - Modules extending this: extending-modules.md

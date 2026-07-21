@@ -6,8 +6,11 @@ Agent skills for working with Drupal.
 
 - **drupal-project-description**: create or edit a project page on drupal.org (the module or theme
   body at `drupal.org/project/<name>`), or generate a `PROJECT_DESCRIPTION.html` file, using the
-  special drupal.org formatting classes (note boxes, tip boxes, action buttons, grids, side-by-side
-  listings) and a human, non-AI writing voice.
+  special drupal.org formatting classes (note boxes, tip boxes, warning boxes, action buttons,
+  grids, side-by-side listings) and a human, non-AI writing voice.
+- **drupal-module-documentation**: write end-user and developer documentation for a contrib module
+  with MkDocs, build the `docs/` structure, and set up `mkdocs.yml` and `.gitlab-ci.yml` for the
+  drupal.org GitLab Pages pipeline.
 
 ## Install
 
