@@ -11,6 +11,10 @@ Agent skills for working with Drupal.
 - **drupal-module-documentation**: write end-user and developer documentation for a contrib module
   with MkDocs, build the `docs/` structure, and set up `mkdocs.yml` and `.gitlab-ci.yml` for the
   drupal.org GitLab Pages pipeline.
+- **drupal-code-provenance**: run a script that counts custom code (under `modules/custom`,
+  `themes/custom`, `profiles/custom`, the code you and the agent wrote) against community code
+  (Drupal core and contrib), splitting server-side "dangerous" PHP from frontend, to answer how much
+  of the running code was hand-written versus assembled from the community.
 
 ## Install
 
