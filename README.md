@@ -15,6 +15,11 @@ Agent skills for working with Drupal.
   `themes/custom`, `profiles/custom`, the code you and the agent wrote) against community code
   (Drupal core and contrib), splitting server-side "dangerous" PHP from frontend, to answer how much
   of the running code was hand-written versus assembled from the community.
+- **drupal-tutorial-video**: record a narrated 1920x1080 MP4 tutorial of how to set up a module.
+  Captures a ddev site in the browser on a virtual X display with a visible mouse cursor and typed
+  input (agent-browser locates elements, xdotool does the visible clicking and typing, ffmpeg
+  x11grab records), generates ElevenLabs voice-over, renders command cards for terminal steps,
+  overlays a Montserrat caption bar, and concatenates the scenes into one video.
 
 ## Install
 
