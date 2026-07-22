@@ -43,11 +43,16 @@ ddev web container            :99 = Xvfb (1920x1080)
   |- Chromium  --kiosk --window-size=1920,1080  (DISPLAY=:99, remote-debug port)
   |- xdotool   -> visible cursor move / click / type --delay   (DISPLAY=:99)
   |- ffmpeg    -f x11grab -i :99   -> scenes/NN.mp4             (DISPLAY=:99)
+  |- agent-browser --cdp http://127.0.0.1:9222  -> navigate / snapshot / get box / wait
 
 HOST
-  |- agent-browser --cdp <forwarded debug port>  -> navigate / snapshot / get box / wait
   |- awaz -o audio/NN.mp3  -> narration   (written into the ddev-mounted build dir)
 ```
+
+agent-browser runs **inside the container** (installed via npm by preflight): host CDP does
+not work because ddev maps the debug port to a dynamic host port and Chromium's DevTools
+rejects the forwarded connection on a Host-header mismatch (DNS-rebinding protection). From
+inside the container the Host is `127.0.0.1:9222` and matches.
 
 Division of responsibility:
 
@@ -64,24 +69,24 @@ Chromium runs in `--kiosk` at position 0,0 so the viewport coordinates returned 
 `get box` map directly to screen coordinates for xdotool. A small fixed calibration offset
 may be needed; this is the main place iteration is expected during the build.
 
-CDP port forwarding from host to container and the kiosk coordinate mapping are the two
-fiddly parts of the implementation and are called out as the known technical risk.
+The kiosk coordinate mapping (aligning `get box` viewport coordinates to xdotool screen
+coordinates) is the main fiddly part of the implementation and the known technical risk.
 
 ## Preflight (run first, in order)
 
 1. **ddev** project exists and is running; abort with guidance if not. Ask for and confirm
    the site **URL, username, and password**.
-2. **Container packages** (`ffmpeg`, `xvfb`, `xdotool`, `chromium`): check with
-   `ddev exec`. If missing, install with apt-get. Offer the persistent route
-   (`webimage_extra_packages` in `.ddev/config.yaml`) versus a quick ephemeral
-   `ddev exec` install, and note the ephemeral one is lost on `ddev restart`.
-3. **agent-browser** on the host (`agent-browser --version`); abort if absent (hard
-   requirement).
+2. **Container packages** (`ffmpeg`, `xvfb`, `xdotool`, `chromium`, `x11-utils`,
+   `fonts-dejavu-core`, `fonts-noto-cjk`): installed persistently via a ddev config drop-in
+   (`.ddev/config.tutorial-video.yaml` with `webimage_extra_packages`) plus one `ddev restart`.
+   `fonts-noto-cjk` so non-Latin target languages render instead of tofu.
+3. **agent-browser** in the container: installed with `npm install -g agent-browser` (a
+   post-start hook re-installs it if missing). It has to run in the container because CDP
+   only works from there.
 4. **awaz** on the host: if missing, offer `npm i -g awaz` (needs Node/npm). Ensure
-   `ELEVENLABS_API_KEY` is set; help set it if not.
-5. **Montserrat**: if the ttf is not already available, download
-   `https://www.1001freefonts.com/d/5711/montserrat.zip` to `/tmp`, unzip, and use
-   `Montserrat-Regular.ttf` (and `-Bold` for titles).
+   `ELEVENLABS_API_KEY` is set (needs Text to Speech and Voices-read scopes); help if not.
+5. **Montserrat**: if the ttf is not present, download the Montserrat variable font from
+   Google Fonts to `/tmp` and copy it into the build dir as `Montserrat-Regular.ttf`.
 
 ## Working directory
 
@@ -156,7 +161,8 @@ verifiable terms).
 
 ## Known risks
 
-- **CDP port forwarding** from host agent-browser to the in-container Chromium.
+- **CDP is container-only.** agent-browser must run inside the container against
+  `127.0.0.1:9222`; host CDP is blocked by the Host-header check on ddev's dynamic port.
 - **Kiosk coordinate mapping**: aligning `get box` viewport coordinates to xdotool screen
   coordinates; may need a calibration offset.
 - **Ephemeral container packages**: apt-get installs in the web container are lost on

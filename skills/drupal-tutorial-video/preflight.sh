@@ -27,6 +27,10 @@ NEED_RESTART=0
 if [ ! -f "$CONF" ]; then
   cat > "$CONF" <<YAML
 # Added by the drupal-tutorial-video skill.
+# fonts-noto-cjk so non-Latin target languages (Japanese/Chinese/Korean) render, not tofu.
+# The post-start hook installs agent-browser (npm) in the container; CDP only works from
+# inside the container, so agent-browser has to live there. npm-global installs do not
+# persist across rebuilds, so the hook re-installs it if missing on every start.
 webimage_extra_packages:
   - ffmpeg
   - xvfb
@@ -34,11 +38,10 @@ webimage_extra_packages:
   - chromium
   - x11-utils
   - fonts-dejavu-core
-web_extra_exposed_ports:
-  - name: cdp
-    container_port: ${CDP_PORT}
-    http_port: ${CDP_PORT}
-    https_port: $((CDP_PORT + 1))
+  - fonts-noto-cjk
+hooks:
+  post-start:
+    - exec: "command -v agent-browser >/dev/null 2>&1 || npm install -g agent-browser"
 YAML
   ok "wrote $CONF"
   NEED_RESTART=1
@@ -46,12 +49,12 @@ else
   ok "$CONF already present"
 fi
 
-# Do the packages exist in the container yet?
+# Do the container packages exist yet?
 if ! cexec "command -v ffmpeg && command -v Xvfb && command -v xdotool && command -v chromium" >/dev/null 2>&1; then
   NEED_RESTART=1
 fi
 if [ "$NEED_RESTART" = 1 ]; then
-  info "ddev restart (builds container packages, exposes port $CDP_PORT)"
+  info "ddev restart (builds container packages, runs the agent-browser hook)"
   ddev restart
 fi
 cexec "command -v ffmpeg >/dev/null"  || die "ffmpeg missing in web container after restart"
@@ -60,9 +63,14 @@ cexec "command -v xdotool >/dev/null" || die "xdotool missing in web container a
 cexec "command -v chromium >/dev/null" || die "chromium missing in web container after restart"
 ok "container has ffmpeg, Xvfb, xdotool, chromium"
 
-# 4. Host tools.
-command -v agent-browser >/dev/null || die "agent-browser is not installed on the host (https://github.com/vercel-labs/agent-browser)"
-ok "agent-browser present"
+# 4. agent-browser must live in the container (CDP only works from localhost inside it).
+if ! cexec "command -v agent-browser >/dev/null 2>&1" >/dev/null 2>&1; then
+  info "installing agent-browser in the web container (npm install -g agent-browser)"
+  ddev exec npm install -g agent-browser
+fi
+cexec "command -v agent-browser >/dev/null 2>&1" >/dev/null 2>&1 \
+  || die "agent-browser missing in the web container (needs Node/npm there)"
+ok "agent-browser present in the container"
 
 if ! command -v awaz >/dev/null; then
   if command -v npm >/dev/null; then
@@ -74,20 +82,15 @@ if ! command -v awaz >/dev/null; then
 fi
 ok "awaz present"
 if [ -z "${ELEVENLABS_API_KEY:-}" ]; then
-  warn "ELEVENLABS_API_KEY is not set. Export it (export ELEVENLABS_API_KEY=...) before recording; awaz needs it to list voices and generate narration."
+  warn "ELEVENLABS_API_KEY is not set. Export it before recording. The key needs the Text to Speech and Voices (read) permissions, or awaz fails with missing_permissions."
 fi
 
-# 5. Montserrat font.
+# 5. Montserrat font (variable font from Google Fonts; drawtext renders the default instance).
 if [ ! -f "$HDIR/assets/Montserrat-Regular.ttf" ]; then
-  info "downloading Montserrat to /tmp"
-  rm -rf /tmp/montserrat && mkdir -p /tmp/montserrat
-  curl -fsSL -o /tmp/montserrat.zip "https://www.1001freefonts.com/d/5711/montserrat.zip"
-  unzip -o -q /tmp/montserrat.zip -d /tmp/montserrat
-  reg="$(find /tmp/montserrat -iname 'Montserrat-Regular.ttf' | head -n1)"
-  bold="$(find /tmp/montserrat -iname 'Montserrat-Bold.ttf' | head -n1)"
-  [ -n "$reg" ] || die "Montserrat-Regular.ttf not found in the zip"
-  cp "$reg" "$HDIR/assets/Montserrat-Regular.ttf"
-  [ -n "$bold" ] && cp "$bold" "$HDIR/assets/Montserrat-Bold.ttf"
+  info "downloading Montserrat (Google Fonts) to /tmp"
+  curl -fsSL -o /tmp/Montserrat.ttf \
+    "https://github.com/google/fonts/raw/main/ofl/montserrat/Montserrat%5Bwght%5D.ttf"
+  cp /tmp/Montserrat.ttf "$HDIR/assets/Montserrat-Regular.ttf"
 fi
 ok "Montserrat font in $HDIR/assets"
 

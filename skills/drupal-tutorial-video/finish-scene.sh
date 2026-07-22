@@ -30,7 +30,8 @@ vdelta="$(awk -v v="$vdur" -v tg="$target" 'BEGIN{d=tg-v; print (d>0? d: 0)}')"
 vf="tpad=stop_mode=clone:stop_duration=${vdelta}"
 cap="$HDIR/final/${NN}.caption.txt"
 if [ -s "$cap" ]; then
-  vf="${vf},drawbox=x=0:y=ih*0.91:w=iw:h=ih*0.09:color=black@0.85:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=ih*0.91+(ih*0.09-text_h)/2"
+  # drawbox understands ih/iw; drawtext does NOT (it uses h/w), so the drawtext y-expr uses h.
+  vf="${vf},drawbox=x=0:y=ih*0.91:w=iw:h=ih*0.09:color=black@0.85:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h*0.91+(h*0.09-text_h)/2"
 fi
 
 if [ "$have_audio" = 1 ]; then

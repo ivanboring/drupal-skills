@@ -28,9 +28,12 @@ Terminal commands that cannot be shown in the browser (`composer require`, `drus
 ## Requirements (hard)
 
 - A running **ddev** project. You need its site URL, an admin username, and a password.
-- **agent-browser** installed (host). See https://github.com/vercel-labs/agent-browser.
+- **agent-browser** in the web container (preflight installs it there with `npm`; it drives
+  Chromium over CDP on the container's localhost). See
+  https://github.com/vercel-labs/agent-browser.
 - **awaz** (`npm i -g awaz`, https://github.com/ahmadawais/awaz), an ElevenLabs TTS wrapper.
   Needs `ELEVENLABS_API_KEY` in the environment (NOT `@elevenlabs/cli`, which has no TTS).
+  The key must have the **Text to Speech** and **Voices (read)** permissions.
 - ffmpeg, Xvfb, xdotool, chromium in the web container (preflight installs these).
 - Montserrat TTF for the caption bar (preflight downloads it if missing).
 
@@ -108,12 +111,13 @@ Create a todo per step.
    - Write the caption to `final/NN.caption.txt` (one line, plain).
    - **browser-action / intro / module-page:**
      1. `./record-scene.sh start NN`
-     2. Drive the browser: `agent-browser --cdp http://127.0.0.1:9222 open <url>`,
+     2. Drive the browser **inside the container** (host CDP is blocked, see Known tuning
+        points): `ddev exec agent-browser --cdp http://127.0.0.1:9222 open <url>`,
         `snapshot -i`, `wait` as needed. To click or type an element, get its center in
         viewport pixels (which equal screen pixels in kiosk):
         ```
-        agent-browser --cdp http://127.0.0.1:9222 eval \
-          "(()=>{const r=document.querySelector('SEL').getBoundingClientRect();return Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)})()"
+        ddev exec bash -lc "agent-browser --cdp http://127.0.0.1:9222 eval \
+          \"(()=>{const r=document.querySelector('SEL').getBoundingClientRect();return Math.round(r.x+r.width/2)+' '+Math.round(r.y+r.height/2)})()\""
         ```
         then move, click, and type with the hands:
         ```
@@ -121,8 +125,10 @@ Create a todo per step.
         ddev exec DISPLAY=:99 bash /var/www/html/.tutorial-build/<slug>/hands.sh click
         ddev exec DISPLAY=:99 bash /var/www/html/.tutorial-build/<slug>/hands.sh type "value to type"
         ```
-        Pace the actions like a human: move, small pause, click, then type. Leave the target
-        on screen for a beat before stopping.
+        Before typing into a field that may already hold text (search/filter fields keep
+        their value across reloads), clear it first: `hands.sh key ctrl+a` then `type`, or use
+        `agent-browser fill` (which clears). Pace the actions like a human: move, small pause,
+        click, then type. Leave the target on screen for a beat before stopping.
      3. `./record-scene.sh stop NN`
    - **command-card:** `./make-card.sh NN 4 "composer require drupal/<name>"`.
 
@@ -155,17 +161,38 @@ plain, direct, terse, active voice. No em dashes or en dashes. No marketing hype
 subjective qualifiers in the step narration (the opt-in intro may say why the module
 matters, but still in verifiable terms). No emojis.
 
+## Recording gotchas
+
+General lessons for recording a Drupal admin UI in a headless browser:
+
+- **Clear text inputs before typing.** GET filter and search fields keep their value across
+  reloads, so typing again appends ("Powered byPowered by") and the filter breaks. Clear
+  first with `hands.sh key ctrl+a` then type, or use `agent-browser fill`.
+- **Pre-seed AJAX-dependent forms.** Forms that rebuild dependent fields via Drupal AJAX (a
+  provider select that repopulates a model select, etc.) are unreliable to drive live. Set
+  the value first with `drush config:set` so the form loads already settled, then only
+  demonstrate the final selection on camera.
+- **Avoid batch operations on camera.** Actions that trigger a batch (some imports, adding a
+  language with interface translation) rely on a meta-refresh that stalls in the headless
+  browser. Disable or pre-run the batch with `drush` before recording so the page redirects
+  instantly.
+
 ## Known tuning points (verify on the first live run)
 
-- **CDP reach from host.** After preflight's `ddev restart`, the host should reach
-  `http://127.0.0.1:9222/json/version`. If agent-browser cannot attach over CDP, install
-  agent-browser in the container and run it there against localhost:
-  `ddev exec agent-browser --cdp http://127.0.0.1:9222 ...`.
+- **CDP: use the container.** Host CDP does not work: ddev maps the exposed port to a dynamic
+  host port, and Chromium's DevTools rejects the forwarded connection because the Host-header
+  port no longer matches its listening port (DNS-rebinding protection; `--remote-allow-origins=*`
+  only covers Origin, not Host). Always drive agent-browser inside the container against
+  localhost: `ddev exec agent-browser --cdp http://127.0.0.1:9222 ...`.
 - **Cursor alignment.** `get box` returns viewport coordinates. Kiosk Chromium at 0,0 with
   `--force-device-scale-factor=1` makes viewport pixels equal screen pixels, but a small
   fixed offset may be needed. Take a screenshot mid-scene and adjust if the click misses.
 - **Window focus for typing.** `xdotool type` goes to the focused window. session.sh
   activates the Chromium window; if typing lands nowhere, re-activate it before typing.
+- **Non-Latin languages need CJK fonts.** Preflight installs `fonts-noto-cjk` so Japanese,
+  Chinese, and Korean render instead of tofu boxes. Chromium caches fonts at startup, so if
+  you install fonts after a session is running, restart it (`session.sh stop && start`); a
+  page reload is not enough.
 
 ## Common mistakes
 
@@ -178,3 +205,6 @@ matters, but still in verifiable terms). No emojis.
 | Ephemeral container packages | Installs are lost on `ddev restart` unless in `.ddev/config.tutorial-video.yaml` (preflight writes this). |
 | Cleaning up before approval | Leave the build dir intact until the user approves. |
 | Narration and video out of sync | `finish-scene.sh` pads the video to the audio; never trim the audio to fit the video. |
+| Driving agent-browser from the host | Host CDP is blocked; run it in the container: `ddev exec agent-browser --cdp http://127.0.0.1:9222 ...`. |
+| Typing into a field that still holds text | Clear it first (`hands.sh key ctrl+a` then type, or `agent-browser fill`). |
+| Recording an AJAX select or batch page live | Pre-seed with `drush config:set` and record the settled state. |
