@@ -64,17 +64,17 @@ ok "container has ffmpeg, Xvfb, xdotool, chromium"
 command -v agent-browser >/dev/null || die "agent-browser is not installed on the host (https://github.com/vercel-labs/agent-browser)"
 ok "agent-browser present"
 
-if ! command -v elevenlabs-cli >/dev/null; then
-  if command -v cargo >/dev/null; then
-    info "installing elevenlabs-cli (cargo install elevenlabs-cli)"
-    cargo install elevenlabs-cli
+if ! command -v awaz >/dev/null; then
+  if command -v npm >/dev/null; then
+    info "installing awaz (npm i -g awaz)"
+    npm i -g awaz
   else
-    die "elevenlabs-cli not found and cargo (Rust) is not installed. Install Rust (https://rustup.rs) then: cargo install elevenlabs-cli"
+    die "awaz not found and npm (Node.js) is not installed. Install Node.js (https://nodejs.org) then: npm i -g awaz"
   fi
 fi
-ok "elevenlabs-cli present"
-if ! elevenlabs-cli voice list >/dev/null 2>&1; then
-  warn "elevenlabs-cli cannot list voices. Configure your API key (ELEVENLABS_API_KEY or its config file) before recording."
+ok "awaz present"
+if [ -z "${ELEVENLABS_API_KEY:-}" ]; then
+  warn "ELEVENLABS_API_KEY is not set. Export it (export ELEVENLABS_API_KEY=...) before recording; awaz needs it to list voices and generate narration."
 fi
 
 # 5. Montserrat font.

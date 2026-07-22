@@ -17,10 +17,12 @@ Terminal commands that cannot be shown in the browser are rendered as still comm
 - **Recording location:** inside the ddev web container, on an Xvfb display `:99` at
   1920x1080. Chosen for reproducibility and to match the "install ffmpeg on the web
   container" intent.
-- **TTS:** the third-party Rust `elevenlabs-cli` (`cargo install elevenlabs-cli`), run on
-  the host. The official `github.com/elevenlabs/cli` (`@elevenlabs/cli`) was rejected as a
-  backend because it manages conversational AI agents and has no text-to-speech, voice
-  listing, or audio output.
+- **TTS:** `awaz` (`npm i -g awaz`, https://github.com/ahmadawais/awaz), an ElevenLabs
+  wrapper, run on the host. Chosen over the Rust `elevenlabs-cli` for a lighter install
+  (Node/npm instead of a Rust toolchain). It lists voices (`awaz voices`) and generates
+  audio (`awaz -v <voice> -o out.mp3 "text"`), authenticating with `ELEVENLABS_API_KEY`.
+  The official `github.com/elevenlabs/cli` (`@elevenlabs/cli`) was rejected because it
+  manages conversational AI agents and has no text-to-speech, voice listing, or audio output.
 - **Visible cursor:** the real X11 pointer on `:99`, driven by `xdotool`, captured natively
   by `ffmpeg x11grab`. Not a JavaScript/DOM injected cursor (a DOM cursor cannot cover
   browser chrome or native widgets, does not correspond to the real click point, and
@@ -44,7 +46,7 @@ ddev web container            :99 = Xvfb (1920x1080)
 
 HOST
   |- agent-browser --cdp <forwarded debug port>  -> navigate / snapshot / get box / wait
-  |- elevenlabs-cli tts  -> audio/NN.mp3   (written into the ddev-mounted build dir)
+  |- awaz -o audio/NN.mp3  -> narration   (written into the ddev-mounted build dir)
 ```
 
 Division of responsibility:
@@ -75,8 +77,8 @@ fiddly parts of the implementation and are called out as the known technical ris
    `ddev exec` install, and note the ephemeral one is lost on `ddev restart`.
 3. **agent-browser** on the host (`agent-browser --version`); abort if absent (hard
    requirement).
-4. **elevenlabs-cli** on the host: if missing, offer `cargo install elevenlabs-cli` and
-   note it needs a Rust toolchain. Ensure the API key is configured; help set it if not.
+4. **awaz** on the host: if missing, offer `npm i -g awaz` (needs Node/npm). Ensure
+   `ELEVENLABS_API_KEY` is set; help set it if not.
 5. **Montserrat**: if the ttf is not already available, download
    `https://www.1001freefonts.com/d/5711/montserrat.zip` to `/tmp`, unzip, and use
    `Montserrat-Regular.ttf` (and `-Bold` for titles).
@@ -116,11 +118,11 @@ Nothing is deleted at the end; the user may ask for changes.
 3. **Storyboard**: write `storyboard.md` with ordered scenes, each carrying `type`, the
    on-screen actions, the narration text, and the bottom-bar caption text. Get user
    approval before recording.
-4. **Voice**: run `elevenlabs-cli voice list`, present the options, ask which voice.
+4. **Voice**: run `awaz voices`, present the options, ask which voice.
 5. **Record scene by scene**: a persistent agent-browser/Chrome session; per scene, start
    ffmpeg x11grab, run the action sequence (agent-browser locates, xdotool moves / clicks /
    types), then stop. Command cards render a still instead of recording.
-6. **Narrate**: `elevenlabs-cli tts` per scene to `audio/NN.mp3`; prepend and append 1-2s
+6. **Narrate**: `awaz -v <voice> -o audio/NN.mp3 "..."` per scene; prepend and append 1-2s
    of silence.
 7. **Fit**: for each scene, `final_dur = max(video_dur, audio_dur)`; freeze-pad the video
    (ffmpeg `tpad=stop_mode=clone`) so it never ends before the narration finishes.

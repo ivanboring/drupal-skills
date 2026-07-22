@@ -29,8 +29,8 @@ Terminal commands that cannot be shown in the browser (`composer require`, `drus
 
 - A running **ddev** project. You need its site URL, an admin username, and a password.
 - **agent-browser** installed (host). See https://github.com/vercel-labs/agent-browser.
-- **elevenlabs-cli** (the Rust crate `cargo install elevenlabs-cli`, NOT `@elevenlabs/cli`,
-  which has no text-to-speech) with an API key configured.
+- **awaz** (`npm i -g awaz`, https://github.com/ahmadawais/awaz), an ElevenLabs TTS wrapper.
+  Needs `ELEVENLABS_API_KEY` in the environment (NOT `@elevenlabs/cli`, which has no TTS).
 - ffmpeg, Xvfb, xdotool, chromium in the web container (preflight installs these).
 - Montserrat TTF for the caption bar (preflight downloads it if missing).
 
@@ -44,7 +44,7 @@ Run every script **from the ddev project root**, with `export TUT_SLUG=<tutorial
 
 | Script | Runs on | Purpose |
 |---|---|---|
-| `preflight.sh` | host | Check + set up ddev, container packages, agent-browser, elevenlabs-cli, Montserrat; create the build dir |
+| `preflight.sh` | host | Check + set up ddev, container packages, agent-browser, awaz, Montserrat; create the build dir |
 | `session.sh start\|stop [url]` | host | Bring up Xvfb `:99`, kiosk Chromium with remote debugging, wait for CDP; stop tears it down |
 | `record-scene.sh start\|stop <NN>` | host | Start/stop the x11grab capture for scene `NN` |
 | `hands.sh move\|click\|type\|key\|hover ...` | container | The visible cursor and typing (called via `ddev exec`) |
@@ -62,7 +62,7 @@ Everything lives under the ddev mount so host and container share one filesystem
   hands.sh                 # copied here by preflight so the container can run it
   assets/Montserrat-*.ttf
   scenes/NN.mp4            # raw silent capture (or command card)
-  audio/NN.mp3            # narration from elevenlabs-cli
+  audio/NN.mp3            # narration from awaz
   final/NN.caption.txt    # caption bar text for scene NN (one line)
   final/scene-NN.mp4      # padded + muxed + captioned
   final/tutorial.mp4      # concatenated result
@@ -98,8 +98,8 @@ Create a todo per step.
    of scenes, each with `type`, the on-screen actions, the narration text, and the one-line
    caption. **Get the user's approval before recording.**
 
-5. **Pick a voice.** Run `elevenlabs-cli voice list`, present the options with their names
-   and ids, and ask the user which voice to use. Remember the chosen voice id.
+5. **Pick a voice.** Run `awaz voices`, present the options with their names and ids, and
+   ask the user which voice to use. Remember the chosen voice (id or name).
 
 6. **Start the session.** `./session.sh start "<site-url>"`. This opens the kiosk browser on
    `:99` inside the container.
@@ -128,9 +128,9 @@ Create a todo per step.
 
 8. **Generate narration.** For each scene, generate the voice-over:
    ```
-   elevenlabs-cli tts "<narration text>" --voice <voice-id> \
-     --output .tutorial-build/<slug>/audio/NN.mp3
+   awaz -v <voice> -o .tutorial-build/<slug>/audio/NN.mp3 "<narration text>"
    ```
+   Optional flags: `--speed 0.5-2.0`, `--stability 0-1`, `--style 0-1`, `--model-id <id>`.
 
 9. **Finish each scene.** `./finish-scene.sh NN` for every scene. It reads the scene video
    and its narration, adds ~1s lead and ~1s tail silence (so there is a 1-2s gap between
@@ -171,7 +171,7 @@ matters, but still in verifiable terms). No emojis.
 
 | Mistake | Fix |
 |---|---|
-| Using `@elevenlabs/cli` for narration | It has no TTS. Use the Rust `elevenlabs-cli` crate. |
+| Using `@elevenlabs/cli` for narration | It has no TTS. Use `awaz` (`npm i -g awaz`). |
 | agent-browser doing the click | CDP clicks are invisible in the recording. Click with `hands.sh`; use agent-browser only to find the element. |
 | Recording a terminal | Terminal commands are command cards, not screen recordings. |
 | Intro on the generic drupal.org site | The intro shows the module's own project page, `drupal.org/project/<machine_name>`. |
