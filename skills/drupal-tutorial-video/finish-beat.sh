@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
-# Finish one scene: pad the video to the narration length, add ~1s lead and ~1s tail
-# silence, mux the audio, and draw the bottom caption bar. Run from the ddev project root
-# with TUT_SLUG set.
-#   ./finish-scene.sh 03
+# Finish one beat: pad the video to the narration length, add a short lead/tail of silence,
+# mux the audio, and draw the bottom caption bar. Run from the ddev project root with
+# TUT_SLUG set.
+#   ./finish-beat.sh 03
+# Defaults give a small breath between beats. For the LAST beat of a scene, pass a longer
+# tail so there is a 1-2s gap before the next scene:
+#   TUT_TAIL=1.5 ./finish-beat.sh 03
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib.sh"
 
-NN="$(printf '%02d' "$((10#${1:?scene number required}))")"
-LEAD="${TUT_LEAD:-1.0}"    # seconds of silence before narration
-TAIL="${TUT_TAIL:-1.0}"    # seconds of silence after narration
+NN="$(printf '%02d' "$((10#${1:?beat number required}))")"
+LEAD="${TUT_LEAD:-0.5}"    # seconds of silence before narration
+TAIL="${TUT_TAIL:-0.5}"    # seconds of silence after narration (raise for scene-final beats)
 LEAD_MS="$(awk -v l="$LEAD" 'BEGIN{printf "%d", l*1000}')"
 
-[ -f "$HDIR/scenes/${NN}.mp4" ] || die "scenes/${NN}.mp4 not found (record the scene first)"
+[ -f "$HDIR/beats/${NN}.mp4" ] || die "beats/${NN}.mp4 not found (record the beat first)"
 
-vdur="$(cduration "$CDIR/scenes/${NN}.mp4")"
+vdur="$(cduration "$CDIR/beats/${NN}.mp4")"
 have_audio=0
 adur=0
 if [ -f "$HDIR/audio/${NN}.mp3" ]; then
@@ -35,17 +38,17 @@ if [ -s "$cap" ]; then
 fi
 
 if [ "$have_audio" = 1 ]; then
-  cexec "cd '$CDIR' && ffmpeg -y -i 'scenes/${NN}.mp4' -i 'audio/${NN}.mp3' \
+  cexec "cd '$CDIR' && ffmpeg -y -i 'beats/${NN}.mp4' -i 'audio/${NN}.mp3' \
 -filter_complex \"[0:v]${vf}[v];[1:a]adelay=${LEAD_MS}|${LEAD_MS},apad[a]\" \
 -map '[v]' -map '[a]' -t ${target} \
 -codec:v libx264 -preset medium -pix_fmt yuv420p -codec:a aac -ar 44100 -movflags +faststart \
-'final/scene-${NN}.mp4' >'final/${NN}.finish.log' 2>&1"
+'final/beat-${NN}.mp4' >'final/${NN}.finish.log' 2>&1"
 else
-  cexec "cd '$CDIR' && ffmpeg -y -i 'scenes/${NN}.mp4' -f lavfi -i anullsrc=r=44100:cl=stereo \
+  cexec "cd '$CDIR' && ffmpeg -y -i 'beats/${NN}.mp4' -f lavfi -i anullsrc=r=44100:cl=stereo \
 -filter_complex \"[0:v]${vf}[v]\" \
 -map '[v]' -map 1:a -t ${target} \
 -codec:v libx264 -preset medium -pix_fmt yuv420p -codec:a aac -ar 44100 -movflags +faststart \
-'final/scene-${NN}.mp4' >'final/${NN}.finish.log' 2>&1"
+'final/beat-${NN}.mp4' >'final/${NN}.finish.log' 2>&1"
 fi
 
-echo "finished scene $NN -> final/scene-${NN}.mp4 (${target}s)"
+echo "finished beat $NN -> final/beat-${NN}.mp4 (${target}s)"

@@ -16,7 +16,7 @@ ddev describe >/dev/null 2>&1 || die "no ddev project here, or it is not running
 ok "ddev project is running"
 
 # 2. Build directory.
-mkdir -p "$HDIR"/{scenes,audio,cards,final,assets}
+mkdir -p "$HDIR"/{beats,audio,cards,final,assets}
 cp "$HERE/hands.sh" "$HDIR/hands.sh"
 chmod +x "$HDIR/hands.sh"
 ok "build dir $HDIR ready"

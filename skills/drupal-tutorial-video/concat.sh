@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Concatenate all finished scenes into the final tutorial. Run from the ddev project root
-# with TUT_SLUG set. Re-run any time after re-finishing individual scenes.
+# Concatenate all finished beats into the final tutorial. Run from the ddev project root
+# with TUT_SLUG set. Re-run any time after re-finishing individual beats.
 #   ./concat.sh
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib.sh"
 
 shopt -s nullglob
-scenes=("$HDIR"/final/scene-*.mp4)
-[ "${#scenes[@]}" -gt 0 ] || die "no finished scenes in $HDIR/final (run finish-scene.sh first)"
+beats=("$HDIR"/final/beat-*.mp4)
+[ "${#beats[@]}" -gt 0 ] || die "no finished beats in $HDIR/final (run finish-beat.sh first)"
 
-# Build the concat list (paths relative to the final/ directory), scenes in order.
+# Build the concat list (paths relative to the final/ directory), beats in order.
 list="$HDIR/final/concat.txt"
 : > "$list"
-for f in $(printf '%s\n' "${scenes[@]}" | sort); do
+for f in $(printf '%s\n' "${beats[@]}" | sort); do
   printf "file '%s'\n" "$(basename "$f")" >> "$list"
 done
 
