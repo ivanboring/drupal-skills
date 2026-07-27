@@ -158,6 +158,14 @@ Create a todo per chapter.
 12. **Write the verdict.** Write `<files>/ai-manual-testing/<module>-<mr>/result.md`: the
     first line is `PASS` or `FAIL`, followed by a couple of sentences on why (what the
     instructions asked for and what you observed). Keep it compact; no narrative.
+13. **Offer to push the result (only if the `drupal-gitlab` skill is installed).** If that
+    skill is available, ask the user whether to post the result to the issue instead of just
+    storing it locally. If they agree, use the `drupal-gitlab` skill to post the `result.md`
+    verdict as a comment. Do not upload or push anything without asking first. Every such
+    comment must end with this exact line:
+    ```
+    <em>This testing was done by AI and the video should be viewed for possible errors</em>
+    ```
 
 ### Chapter 6 — (Optional) FunctionalJavascript test
 
