@@ -22,6 +22,16 @@ Work in **parts**: record a chunk of the flow, pause, change site state or resto
 snapshot, record the next chunk. Parts are numbered `01`, `02`, ... in play order and
 concatenated at the end.
 
+## Video or screenshots
+
+Video is not always warranted. If the issue can be shown with **screenshots** (a static
+before/after, a rendered page, an error message), skip recording and save the time. Capture
+them with agent-browser instead:
+`ddev exec agent-browser --cdp http://127.0.0.1:9222 screenshot final/NN.png`, store them in
+the same output folder, and still write `result.md`. Use video only when the behaviour is
+motion or a multi-step flow that a still cannot convey. When you use screenshots, skip the
+recording, finish, and concat chapters.
+
 ## Requirements (hard) — DDEV only
 
 This skill **only runs under DDEV**. If there is no ddev project, stop.
@@ -115,6 +125,13 @@ Create a todo per chapter.
 
 5. **Secret gate (abort).** If the instructions need secrets, verify presence only (see
    Secrets above). Missing → abort with setup guidance.
+
+**Getting the module code.** If the module under test is not installed but exists in contrib,
+you do not need Composer to add it. Clone it into `modules/custom/<machine_name>` and enable
+it there (`ddev exec drush en <machine_name>`); Drupal uses a custom-placed module the same
+as a contrib one. Cloning into `modules/custom` keeps it out of Composer's `modules/contrib`,
+so you can freely `git fetch` / `git checkout` the MR branch to get the issue's code. This is
+also the easy way to pull an MR onto an already-installed module.
 
 ### Chapter 3 — Record the current state and reproduce the issue
 
