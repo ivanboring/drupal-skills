@@ -41,7 +41,10 @@ all prose in the docs (this matches the `drupal-project-description` skill).
 3. **Set up or edit `mkdocs.yml`** at the repo root. Adapt the template in `mkdocs.yml` in this
    skill folder. Set `site_name`, set `site_url` to
    `https://project.pages.drupalcode.org/<data_name>`, and keep `theme: name: material`. Build the
-   `nav` from the structure below.
+   `nav` from the structure below. The template ships the `markdown_extensions` and `plugins`
+   config the drupal.org `ai` project uses (see "MkDocs plugins and extensions"), including the
+   **mermaid** fence for diagrams. Reach for mermaid whenever a flow, architecture, plugin
+   relationship, or state machine is clearer as a diagram than as prose.
 
 4. **Handle `.gitlab-ci.yml`** (see the section below).
 
@@ -107,6 +110,48 @@ ensure `SKIP_PAGES` is not set to `'1'`, and leave the rest alone.
 Pages-job variables you can set when needed: `_MKDOCS_STRICT` (`'0'` turns off strict link
 checking), `_MKDOCS_EXTRA` (extra mkdocs args), `_PAGES_FORCE_REBUILD` (`'1'` forces a rebuild).
 
+## MkDocs plugins and extensions
+
+The template `mkdocs.yml` mirrors the config the drupal.org `ai` project uses
+(`git.drupalcode.org/project/ai/-/blob/1.x/mkdocs.yml`):
+
+- **`markdown_extensions`**: `attr_list`, `md_in_html`, `pymdownx.blocks.caption`, and
+  `pymdownx.superfences` with a **mermaid** custom fence, alongside the usual `admonition`, `toc`,
+  and `pymdownx.highlight`.
+- **`plugins`**: `search` and **`include-markdown`**
+  (https://github.com/mondeja/mkdocs-include-markdown-plugin), which embeds one markdown file into
+  another with `{% include-markdown "file.md" %}`.
+
+Two of these have install implications:
+
+**Mermaid needs nothing extra.** The Material theme bundles mermaid.js and renders any
+` ```mermaid ` block through the superfences `custom_fences` entry. No pip package, no
+`extra_javascript`. Use it for diagrams:
+
+````markdown
+```mermaid
+flowchart LR
+    Request --> Plugin --> Response
+```
+````
+
+**`include-markdown` is a separate pip package** (`mkdocs-include-markdown-plugin`) that is **not**
+bundled with `mkdocs-material`. The standard drupal.org `gitlab_templates` pages job only runs
+`pip install mkdocs-material`, so the build fails with an unknown-plugin error unless you install it.
+Add a `before_script` to the `pages` job in the module's `.gitlab-ci.yml` (this merges with, and does
+not replace, the template's job `script`):
+
+```yaml
+pages:
+  before_script:
+    - pip install mkdocs-include-markdown-plugin
+```
+
+Add any other non-Material plugin (for example `mkdocs-glightbox`) to that same `pip install` line.
+If you keep the template's default `plugins` (`search` plus `include-markdown`), you must add this
+`before_script`; if you drop `include-markdown` from `mkdocs.yml`, you can drop the `before_script`
+too. To build locally, run `pip install mkdocs-material mkdocs-include-markdown-plugin` first.
+
 ## Documentation Structure
 
 Build `docs/` roughly like this, dropping pages that don't apply and splitting usage into more
@@ -157,3 +202,6 @@ its drupal.org project page and one line on what it adds. Skip the page if there
 | `site_url` with a unique-ID domain | After first push, turn off unique ID; match `site_url` to the clean URL. |
 | AI-sounding prose (em dashes, hype, contrastive phrasing) | Follow the Writing Style rules. |
 | Fabricating screenshot paths | Only embed images actually captured with a browser tool. |
+| Using `include-markdown` without installing it | Add `pip install mkdocs-include-markdown-plugin` to the `pages` job `before_script`; the template only installs `mkdocs-material`. |
+| Adding a JS library to render mermaid | Not needed. Material bundles mermaid.js; the superfences custom fence in `mkdocs.yml` is enough. |
+| Prose-only where a diagram is clearer | Use a ` ```mermaid ` block for flows, architecture, plugin relationships, and state machines. |

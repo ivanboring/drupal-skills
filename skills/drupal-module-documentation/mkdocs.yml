@@ -15,13 +15,29 @@ theme:
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - toc:
       permalink: true
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.blocks.caption
+  # superfences with the mermaid custom fence lets you draw diagrams from
+  # ```mermaid code blocks. Material bundles mermaid.js, so no pip package or
+  # extra_javascript is needed for this to render.
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 plugins:
   - search
+  # include-markdown embeds one markdown file inside another with
+  # {% include-markdown "file.md" %}. Ships in the mkdocs-include-markdown-plugin
+  # package, which is NOT bundled with mkdocs-material, so the pages CI job must
+  # pip install it (see SKILL.md, "MkDocs plugins and extensions"). Drop this
+  # line if you don't reuse content across pages.
+  - include-markdown
 
 # Build nav from the docs/ structure. Drop entries that don't apply.
 # Add the Developers section only if the module has an API or plugin system.
