@@ -23,7 +23,7 @@ start() {
 --remote-debugging-port=${CDP_PORT} --remote-debugging-address=0.0.0.0 --remote-allow-origins=* \
 --ignore-certificate-errors --test-type \
 --no-first-run --no-default-browser-check --disable-infobars --disable-session-crashed-bubble \
---disable-features=Translate --user-data-dir=/tmp/tut-chrome"
+--disable-features=Translate --lang=en-US --accept-lang=en-US,en --user-data-dir=/tmp/tut-chrome"
   cexec "pgrep -x chromium >/dev/null || ( DISPLAY=$DISPLAY_NUM nohup chromium $flags '$url' >/tmp/chromium.log 2>&1 & )"
 
   # Wait for CDP to answer inside the container. curl exits 7 until it is up; silence the

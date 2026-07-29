@@ -4,6 +4,7 @@
 #   ddev exec DISPLAY=:99 bash /var/www/html/.tutorial-build/<slug>/hands.sh move CX CY
 #   ddev exec DISPLAY=:99 bash .../hands.sh click [CX CY]
 #   ddev exec DISPLAY=:99 bash .../hands.sh type "text to type"
+#   ddev exec DISPLAY=:99 bash .../hands.sh type64 "$(printf %s 'text' | base64 -w0)"
 #   ddev exec DISPLAY=:99 bash .../hands.sh key ctrl+a
 #   ddev exec DISPLAY=:99 bash .../hands.sh hover CX CY
 set -euo pipefail
@@ -35,6 +36,11 @@ case "$cmd" in
     xdotool click 1
     ;;
   type)  xdotool type --clearmodifiers --delay "$TYPE_DELAY" -- "$1" ;;
+  # type64 takes base64 and decodes it INSIDE the container, past the `ddev exec` boundary, so
+  # shell metacharacters (braces, backslashes, quotes, commas) survive. Anything but bare ASCII
+  # words must use this: `ddev exec` mangles the rest silently (e.g. it ate `{2,}` and the `\.`
+  # out of an email regex, producing a pattern that could not match).
+  type64) xdotool type --clearmodifiers --delay "$TYPE_DELAY" -- "$(printf '%s' "$1" | base64 -d)" ;;
   key)   xdotool key --clearmodifiers -- "$1" ;;
   *) echo "unknown command: $cmd" >&2; exit 1 ;;
 esac

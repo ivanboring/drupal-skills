@@ -20,8 +20,16 @@ case "$cmd" in
     echo "recording beat $NN -> beats/${NN}.mp4"
     ;;
   stop)
-    # SIGINT lets ffmpeg finalize the moov atom, then wait for it to exit.
-    cexec "pkill -INT -f 'beats/${NN}.mp4' 2>/dev/null || true; for i in \$(seq 1 40); do pgrep -f 'beats/${NN}.mp4' >/dev/null 2>&1 || break; sleep 0.25; done"
+    # SIGINT lets ffmpeg finalize the moov atom. Keep the container command to a single simple
+    # statement: `ddev exec` mangles the escaped `$(seq ...)` and loop before the container sees
+    # them, so the shell dies *before* reaching pkill, the capture never stops, four x11grabs pile
+    # up, and beats come out as tiny stubs. Do the wait loop here on the host, one plain pgrep per
+    # iteration.
+    cexec "pkill -INT -f 'beats/${NN}.mp4' 2>/dev/null || true"
+    for i in $(seq 1 40); do
+      cexec "pgrep -f 'beats/${NN}.mp4' >/dev/null 2>&1" 2>/dev/null || break
+      sleep 0.25
+    done
     echo "stopped beat $NN"
     ;;
   *) die "usage: record-beat.sh start|stop <NN>" ;;

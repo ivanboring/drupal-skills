@@ -82,7 +82,12 @@ if ! command -v awaz >/dev/null; then
 fi
 ok "awaz present"
 if [ -z "${ELEVENLABS_API_KEY:-}" ]; then
-  warn "ELEVENLABS_API_KEY is not set. Export it before recording. The key needs the Text to Speech and Voices (read) permissions, or awaz fails with missing_permissions."
+  KEYFILE="${ELEVENLABS_KEY_FILE:-$HOME/.config/elevenlabs/key}"
+  if [ -f "$KEYFILE" ]; then
+    warn "ELEVENLABS_API_KEY is not set, but a key file exists at $KEYFILE. Export it before recording: export ELEVENLABS_API_KEY=\"\$(cat $KEYFILE)\""
+  else
+    warn "ELEVENLABS_API_KEY is not set. awaz reads it at narration time (step 8), so export it before recording or you get all the way there and fail. A standard spot is ~/.config/elevenlabs/key, then: export ELEVENLABS_API_KEY=\"\$(cat ~/.config/elevenlabs/key)\". The key needs the Text to Speech and Voices (read) permissions, or awaz fails with missing_permissions."
+  fi
 fi
 
 # 5. Montserrat font (variable font from Google Fonts; drawtext renders the default instance).

@@ -8,6 +8,11 @@
 #   TUT_TAIL=1.5 ./finish-beat.sh 03
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib.sh"
+# awk emits a comma decimal under a comma-decimal locale (e.g. LC_NUMERIC=de_DE), which the ffmpeg
+# filtergraph parser reads as a filter separator ("tpad=...:stop_duration=2,65469" fails with exit
+# 8). Force a C locale so every number we hand ffmpeg uses a dot. Checking LANG is not enough:
+# LC_NUMERIC can differ from LANG on the same machine.
+export LC_ALL=C LC_NUMERIC=C
 
 NN="$(printf '%02d' "$((10#${1:?beat number required}))")"
 LEAD="${TUT_LEAD:-0.5}"    # seconds of silence before narration
@@ -34,7 +39,10 @@ vf="tpad=stop_mode=clone:stop_duration=${vdelta}"
 cap="$HDIR/final/${NN}.caption.txt"
 if [ -s "$cap" ]; then
   # drawbox understands ih/iw; drawtext does NOT (it uses h/w), so the drawtext y-expr uses h.
-  vf="${vf},drawbox=x=0:y=ih*0.91:w=iw:h=ih*0.09:color=black@0.85:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h*0.91+(h*0.09-text_h)/2"
+  # black@0.94 (not 0.85): at 0.85 the page text showed through and fought the caption.
+  # expansion=none: without it drawtext parses %{...} and backslashes even from a textfile, so a
+  # caption containing a path, %, or a regex renders as an empty bar with no error.
+  vf="${vf},drawbox=x=0:y=ih*0.91:w=iw:h=ih*0.09:color=black@0.94:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h*0.91+(h*0.09-text_h)/2:expansion=none"
 fi
 
 if [ "$have_audio" = 1 ]; then
