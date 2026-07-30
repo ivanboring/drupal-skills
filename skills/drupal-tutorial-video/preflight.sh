@@ -16,10 +16,15 @@ ddev describe >/dev/null 2>&1 || die "no ddev project here, or it is not running
 ok "ddev project is running"
 
 # 2. Build directory.
-mkdir -p "$HDIR"/{beats,audio,cards,final,assets}
-cp "$HERE/hands.sh" "$HDIR/hands.sh"
-chmod +x "$HDIR/hands.sh"
-ok "build dir $HDIR ready"
+mkdir -p "$HDIR"/{beats,audio,cards,final,assets,slides}
+# Copy the container-side helpers into the shared mount so `ddev exec bash $CDIR/<name>` can run
+# them. hands.sh does the typing; deadair/fade-audio/audit loop over 90+ files in one script (an
+# inline `ddev exec bash -lc` loop breaks: the host shell expands $vars before the container).
+for h in hands.sh deadair.sh fade-audio.sh audit.sh; do
+  cp "$HERE/$h" "$HDIR/$h"
+  chmod +x "$HDIR/$h"
+done
+ok "build dir $HDIR ready (container helpers copied)"
 
 # 3. Container packages + exposed CDP port, via a ddev config drop-in.
 CONF=".ddev/config.tutorial-video.yaml"
