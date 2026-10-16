@@ -1,13 +1,15 @@
 ---
 name: drupal-tutorial-video
-description: Use when recording a narrated screencast or video tutorial that shows how to set up or configure a Drupal module, capturing a ddev site in the browser at 1920x1080 with a visible mouse cursor, typed form input, ElevenLabs voice-over, and a caption bar, then muxing and concatenating the scenes into one MP4.
+description: Use when recording a narrated screencast or video tutorial that shows how to set up or configure a Drupal module, capturing a ddev site in the browser with a visible mouse cursor, typed form input, ElevenLabs voice-over, and a caption bar, then muxing and concatenating the scenes into one MP4. Default format is 16:9 (1920×1080); pass TUT_FORMAT=vertical for 9:16 (1080×1920) Instagram Reels, YouTube Shorts, or TikTok.
 ---
 
 # Drupal Tutorial Video
 
 ## Overview
 
-Records a narrated 1920x1080 MP4 that shows how to set up a Drupal module. The skill reads
+Records a narrated MP4 that shows how to set up a Drupal module. Default format is **16:9
+(1920×1080)**; set `TUT_FORMAT=vertical` for **9:16 (1080×1920)** (Instagram Reels, YouTube
+Shorts, TikTok). The skill reads
 the module to learn the real setup, writes a storyboard for approval, then records each step
 as a **beat** (one narration sentence + its action) with a visible cursor and
 character-by-character typing, generates ElevenLabs narration per beat, length-fits each beat
@@ -26,6 +28,36 @@ The recording happens inside the ddev **web container** on a virtual X display (
 
 Terminal commands that cannot be shown in the browser (`composer require`, `drush en`,
 `ddev ...`) are rendered as still **command cards**, never as a recorded terminal.
+
+## Format selection
+
+| Variable | Values | Effect |
+|---|---|---|
+| `TUT_FORMAT` | `horizontal` (default) / `vertical` | Sets resolution, caption font size, and bar height |
+| `TUT_RES` | e.g. `1920x1080` | Overrides `TUT_FORMAT` resolution entirely |
+| `TUT_CAP_FONT` | integer px (default: 40 horizontal / 52 vertical) | Caption font size |
+| `TUT_CAP_BAR_H` | float 0–1 (default: 0.09 horizontal / 0.07 vertical) | Caption bar height as a fraction of total height |
+
+```bash
+# Reel / Short (9:16)
+export TUT_FORMAT=vertical
+export TUT_SLUG=ai-metering-reel
+./session.sh start "https://mysite.ddev.site"
+
+# Standard tutorial (16:9) — default, no export needed
+export TUT_SLUG=ai-metering-setup
+./session.sh start "https://mysite.ddev.site"
+```
+
+When recording Drupal admin UI in vertical format, the Gin sidebar stays at its full desktop
+width and eats ~180px. Add a `browser-action` beat immediately after login to collapse it:
+
+```bash
+ddev exec agent-browser --cdp http://127.0.0.1:9222 eval \
+  "(()=>{const t=document.querySelector('[data-drupal-selector=\"gin-sidebar-toggle\"]');if(t)t.click()})()"
+```
+
+This recovers ~180px and makes 8 of 9 table columns visible.
 
 ## Requirements (hard)
 

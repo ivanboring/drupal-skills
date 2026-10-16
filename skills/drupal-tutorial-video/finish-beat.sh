@@ -42,7 +42,8 @@ if [ -s "$cap" ]; then
   # black@0.94 (not 0.85): at 0.85 the page text showed through and fought the caption.
   # expansion=none: without it drawtext parses %{...} and backslashes even from a textfile, so a
   # caption containing a path, %, or a regex renders as an empty bar with no error.
-  vf="${vf},drawbox=x=0:y=ih*0.91:w=iw:h=ih*0.09:color=black@0.94:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=h*0.91+(h*0.09-text_h)/2:expansion=none"
+  bar_top="$(awk -v h="$CAP_BAR_H" 'BEGIN{printf "%.4f", 1-h}')"
+  vf="${vf},drawbox=x=0:y=ih*${bar_top}:w=iw:h=ih*${CAP_BAR_H}:color=black@0.94:t=fill,drawtext=fontfile=${FONT_REGULAR}:textfile='final/${NN}.caption.txt':fontcolor=white:fontsize=${CAP_FONT}:x=(w-text_w)/2:y=h*${bar_top}+(h*${CAP_BAR_H}-text_h)/2:expansion=none"
 fi
 
 if [ "$have_audio" = 1 ]; then

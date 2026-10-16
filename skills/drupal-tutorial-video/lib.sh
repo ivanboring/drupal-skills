@@ -7,9 +7,19 @@ set -euo pipefail
 
 # Display / capture settings (override with TUT_* env vars if needed).
 DISPLAY_NUM="${TUT_DISPLAY:-:99}"
-RES="${TUT_RES:-1920x1080}"
 FPS="${TUT_FPS:-25}"
 CDP_PORT="${TUT_CDP_PORT:-9222}"
+
+# TUT_FORMAT=vertical → 9:16 1080×1920 (Reels/Shorts/TikTok)
+# TUT_FORMAT=horizontal (default) → 16:9 1920×1080
+# TUT_RES overrides both.
+FORMAT="${TUT_FORMAT:-horizontal}"
+case "$FORMAT" in
+  vertical)   _res="1080x1920"; CAP_FONT="${TUT_CAP_FONT:-52}"; CAP_BAR_H="${TUT_CAP_BAR_H:-0.07}" ;;
+  horizontal) _res="1920x1080"; CAP_FONT="${TUT_CAP_FONT:-40}"; CAP_BAR_H="${TUT_CAP_BAR_H:-0.09}" ;;
+  *) die "TUT_FORMAT must be 'horizontal' or 'vertical'" ;;
+esac
+RES="${TUT_RES:-$_res}"
 
 # Build directory: host path (relative to project root) and container path.
 HDIR=".tutorial-build/${TUT_SLUG}"
